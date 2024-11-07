@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { StoredInvoice } from '@/types/invoice.types';
+import { CreateInvoiceData, StoredInvoice } from '@/types/invoice.types';
 
 export const api = axios.create({
   baseURL: import.meta.env.DEV 
@@ -25,7 +25,7 @@ export const fetchStudentById = async (id: number) => {
   }
 };
 
-export const saveInvoice = async (invoiceData: StoredInvoice) => {
+export const saveInvoice = async (invoiceData: CreateInvoiceData) => {
   try {
     const response = await api.post('/invoices', invoiceData);
     return response.data;

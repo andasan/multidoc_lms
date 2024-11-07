@@ -20,7 +20,7 @@ interface GenerateInvoiceProps {
     programTitle: string;
     companyInfo: CompanyInfo[];
     invoiceInfo: InvoiceInfo[];
-    enrolmentDate: string;
+    enrolmentDate: string | null;
     invoiceNumber: string;
 }
 
@@ -32,6 +32,10 @@ export const generateInvoice = async ({
     enrolmentDate,
     invoiceNumber
 }: GenerateInvoiceProps): Promise<Blob> => {
+    if (!enrolmentDate) {
+        throw new Error("Enrolment date is required");
+    }
+
     // Calculate invoice date (20 days before completion, adjusted for weekends)
     const placeHolderInvoiceDate = calculateBusinessDate(enrolmentDate);
     const sequentialNumberPlaceholder = '????';

@@ -15,6 +15,15 @@ export interface InvoiceInfo {
     value: string;
 }
 
+export interface CreateInvoiceData {
+    student_id: number;
+    program_title: string;
+    company_info: string;
+    invoice_info: string;
+    invoice_items: string;
+    enrolment_date: string;
+}
+
 export interface StoredInvoice {
     id: number;
     student_id: number;

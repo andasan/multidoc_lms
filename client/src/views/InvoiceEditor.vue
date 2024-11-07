@@ -15,7 +15,7 @@ import { INVOICE_INFO_FIELDS, PRESET_INVOICE_ITEMS } from '@/constants/invoice.c
 import { useStudentDetails } from '@/composables/use-student-details';
 import { useStudents } from '@/composables/use-students';
 import { generateInvoice } from '@/lib/pdf-generator/invoice';
-import { CompanyInfo, InvoiceItem } from '@/types/invoice.types';
+import { CompanyInfo, CreateInvoiceData, InvoiceItem } from '@/types/invoice.types';
 import { StoredInvoice } from '@/types/invoice.types';
 import { saveInvoice, getPreviousInvoices } from '@/services/api';
 import { formatDate } from '@/utils/date-utils';
@@ -222,6 +222,19 @@ const handlePreview = async () => {
 };
 
 const handleSave = async () => {
+
+  // Validate student
+  if (!student.value?.ID) {
+    toast.error('Student ID is required');
+    return;
+  }
+
+  // Validate enrolment date
+  if (!student.value?.enrollment_date) {
+    toast.error('Enrolment date is required');
+    return;
+  }
+
   // Validate invoice items
   if (invoiceItems.value.length === 0) {
     toast.error('Please add at least one invoice item');
@@ -253,7 +266,7 @@ const handleSave = async () => {
   }
 
   try {
-    const invoiceData = {
+    const invoiceData: CreateInvoiceData = {
       student_id: student.value?.ID,
       program_title: programTitle.value,
       company_info: JSON.stringify(companyInfo.value),
