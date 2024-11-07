@@ -1,0 +1,1 @@
+button:has(path[d*="M12 4.75"]) svg[data-v-a37e975c]{animation:spin-a37e975c 1s linear infinite}@keyframes spin-a37e975c{0%{transform:rotate(0)}to{transform:rotate(360deg)}}
