@@ -1,0 +1,44 @@
+name: Deploy Client to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'client/**'
+
+# Add permissions configuration
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build and Push Client
+    steps:
+      - name: git-checkout
+        uses: actions/checkout@v3
+
+      - name: Create env file
+        run: |
+          cd client
+          echo "VITE_CLERK_PUBLISHABLE_KEY=${{ secrets.CLERK_PUBLISHABLE_KEY }}" > .env.production
+          echo "VITE_CLERK_SECRET_KEY=${{ secrets.CLERK_SECRET_KEY }}" >> .env.production
+          echo "VITE_SERVER_BASE_URL=${{ secrets.SERVER_BASE_URL }}" >> .env.production
+
+      - name: Install client dependencies
+        working-directory: ./client
+        run: npm install
+
+      - name: Build client
+        working-directory: ./client
+        run: npm run build
+
+      - name: Push
+        uses: s0/git-publish-subdir-action@develop
+        env:
+          REPO: self
+          BRANCH: build
+          FOLDER: client/dist  # Changed from client/build to client/dist
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MESSAGE: "Build: ({sha}) {msg}"

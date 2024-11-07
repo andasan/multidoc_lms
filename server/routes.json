@@ -1,0 +1,6 @@
+{
+  "api/*": "/$1",
+  "api/users": "/users",
+  "api/users/:id": "/users/:id",
+  "api/users/role/:role": "/users?user_role=:role"
+}
