@@ -120,3 +120,10 @@ This project is licensed under the ISC License.
 - PDF generation powered by PDF-lib
 - Authentication provided by Clerk
 - UI components inspired by shadcn/ui
+
+## Notes
+- The project is currently in development and not all features are fully implemented.
+- The project is not yet ready for production use.
+- Login credentials for demo:
+    - Email: `hoge@hoge.com`
+    - Password: `Ed"]kP2y5gu^9.3`
