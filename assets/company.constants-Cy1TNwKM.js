@@ -1,1 +1,0 @@
-import{f as t}from"./logo-C5CzYpGe.js";const c=t,o="Multidoc LMS",x="#xxx-xxx Cloverdale St",e="City, State, Zipcode",s="(xxx) xxx-xxxx",l="info@multidoclms.com",A=[{text:o,bold:!0},{text:x,bold:!1},{text:e,bold:!1},{text:s,bold:!1},{text:l,bold:!1}];export{c as C,o as a,A as b};

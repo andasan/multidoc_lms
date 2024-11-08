@@ -1,0 +1,1 @@
+import{f as o}from"./logo-C5CzYpGe.js";const x=o,e={name:"Multidoc LMS",address1:"#xxx-xxx Cloverdale St",address2:"City, State, Zipcode",phone:"(xxx) xxx-xxxx",email:"info@multidoclms.com"},s=[{text:e.name,bold:!0},{text:e.address1,bold:!1},{text:e.address2,bold:!1},{text:e.phone,bold:!1},{text:e.email,bold:!1}];export{x as C,e as a,s as b};
