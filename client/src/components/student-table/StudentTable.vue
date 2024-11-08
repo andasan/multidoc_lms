@@ -7,7 +7,7 @@ import { useStudentTable } from '@/composables/use-student-table'
 import StudentTableHeader from './StudentTableHeader.vue'
 import StudentTableRow from './StudentTableRow.vue'
 import StudentTablePagination from './StudentTablePagination.vue'
-
+import StudentTableFilters from './StudentTableFilters.vue'
 import { Student } from '@/types/student.types'
 
 const router = useRouter()
@@ -30,7 +30,8 @@ const {
   prevPage,
   goToPage,
   openDropdownId,
-  toggleDropdown
+  toggleDropdown,
+  filterStatus,
 } = useStudentTable(students, router, route)
 
 const expandedStudentId = ref<string | null>(null)
@@ -63,8 +64,13 @@ onMounted(() => {
 <template>
   <div class="w-full">
     <div class="flex items-center justify-between p-4">
+      <div class="flex flex-col sm:flex-row gap-4 w-full">
       <input v-model="searchQuery" type="text" placeholder="Search students..."
         class="bg-white max-w-sm border rounded px-2 py-1" />
+        <StudentTableFilters
+          v-model:filterStatus="filterStatus"
+        />
+      </div>
       <button @click="loadStudents" class="bg-blue-500 text-white px-4 py-2 rounded">
         Refresh
       </button>

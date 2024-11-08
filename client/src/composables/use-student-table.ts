@@ -4,6 +4,8 @@ import { Router, RouteLocationNormalizedLoaded } from 'vue-router'
 import { TableSorter } from '@/utils/table-sorter'
 import { Student } from '@/types/student.types'
 
+export type FilterStatus = 'all' | 'enrolled' | 'not-enrolled' | 'attempted' | 'not-attempted'
+
 export function useStudentTable(students: Ref<Student[]>, router: Router, route: RouteLocationNormalizedLoaded) {
   const searchQuery = ref('')
   const sortColumn = ref<keyof Student>('user_registered')
@@ -12,12 +14,34 @@ export function useStudentTable(students: Ref<Student[]>, router: Router, route:
   const itemsPerPage = ref(20)
   const openDropdownId = ref<string | null>(null)
   const tableSorter = new TableSorter<Student>()
+  const filterStatus = ref<FilterStatus>('all')
 
   const filteredAndSortedStudents = computed(() => {
-    const filtered = students.value.filter(student => 
-      student.display_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      student.user_email.toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
+    const filtered = students.value.filter(student => {
+      const matchesSearch =
+        student.display_name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+        student.user_email.toLowerCase().includes(searchQuery.value.toLowerCase())
+
+        let matchesFilter = true
+        switch (filterStatus.value) {
+          case 'enrolled':
+            matchesFilter = !!student.enrollment_date
+            break
+          case 'not-enrolled':
+            matchesFilter = !student.enrollment_date
+            break
+          case 'attempted':
+            matchesFilter = student.quizAttempts.length > 0
+            break
+          case 'not-attempted':
+            matchesFilter = student.quizAttempts.length === 0
+            break
+          default:
+            matchesFilter = true
+        }
+
+        return matchesSearch && matchesFilter
+    })
 
     return tableSorter.sort(filtered, sortColumn.value, sortDirection.value)
   })
@@ -81,6 +105,11 @@ export function useStudentTable(students: Ref<Student[]>, router: Router, route:
     updateURL()
   })
 
+  watch(filterStatus, () => {
+    currentPage.value = 1
+    updateURL()
+  })
+
   return {
     searchQuery,
     sortColumn,
@@ -96,6 +125,7 @@ export function useStudentTable(students: Ref<Student[]>, router: Router, route:
     prevPage,
     goToPage,
     openDropdownId,
-    toggleDropdown
+    toggleDropdown,
+    filterStatus
   }
 }
