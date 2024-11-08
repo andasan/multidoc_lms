@@ -9,7 +9,8 @@ import {
 } from "@/lib/pdf-components";
 
 import { FONT_SIZES, PAGE_MARGIN } from '@/constants/doc-format.constants';
-import { CompanyInfo, InvoiceInfo } from '@/types/invoice.types';
+import { InvoiceInfo } from '@/types/invoice.types';
+import { CompanyInfoItem } from '@/types/company.types';
 import { PDFContext, PDFType } from '@/types/pdf.types';
 import { InvoiceItem } from '@/types/invoice.types';
 import { calculateBusinessDate } from '@/utils/date-utils';
@@ -18,7 +19,7 @@ import { createNewPage, getPageConfig } from '@/utils/pdf-utils';
 interface GenerateInvoiceProps {
     invoiceData: InvoiceItem[];
     programTitle: string;
-    companyInfo: CompanyInfo[];
+    companyInfo: CompanyInfoItem[];
     invoiceInfo: InvoiceInfo[];
     enrolmentDate: string | null;
     invoiceNumber: string;

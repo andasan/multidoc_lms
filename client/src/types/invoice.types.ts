@@ -1,13 +1,10 @@
+import { CompanyInfoItem } from "@/types/company.types";
+
 export interface InvoiceItem {
     description: string;
     qty: number;
     unitPrice: number;
     amount: number;
-}
-
-export interface CompanyInfo {
-    text: string;
-    bold: boolean;
 }
 
 export interface InvoiceInfo {
@@ -29,7 +26,7 @@ export interface StoredInvoice {
     student_id: number;
     invoice_number: string;
     program_title: string;
-    company_info: CompanyInfo[];
+    company_info: CompanyInfoItem[];
     invoice_info: InvoiceInfo[];
     invoice_items: InvoiceItem[];
     created_at: string;
@@ -41,7 +38,7 @@ export type InvoiceMode = 'editor' | 'history';
 
 export interface InvoiceState {
     invoiceItems: InvoiceItem[];
-    companyInfo: CompanyInfo[];
+    companyInfo: CompanyInfoItem[];
     programTitle: string;
 }
 

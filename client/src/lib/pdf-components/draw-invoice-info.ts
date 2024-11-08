@@ -1,5 +1,6 @@
 import { PDFContext, PageConfig, PageMargin } from '@/types/pdf.types';
-import { InvoiceInfo, CompanyInfo } from "@/types/invoice.types"
+import { InvoiceInfo } from "@/types/invoice.types"
+import { CompanyInfoItem } from '@/types/company.types';
 import { FONT_SIZES } from '@/constants/doc-format.constants';
 
 export const drawInvoiceInfo = async (
@@ -7,7 +8,7 @@ export const drawInvoiceInfo = async (
     pageConfig: PageConfig, 
     invoiceInfo: InvoiceInfo[],
     positions: PageMargin,
-    companyInfo: CompanyInfo[]
+    companyInfo: CompanyInfoItem[]
 ): Promise<PageConfig> => {
     const { page } = pageConfig;
     let { currentY } = pageConfig;

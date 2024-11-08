@@ -34,7 +34,7 @@ const emit = defineEmits<{
                         'drop-target shadow-lg': dropTarget === index
                     }" draggable="true" @dragstart="emit('drag-start', index)"
                     @dragover="emit('drag-over', $event, index)" @dragleave="emit('drag-leave')" @drop="emit('drop', index)">
-                    <!-- Add animated drop indicators -->
+                    
                     <div v-if="dropTarget === index && dropPosition === 'before'"
                         class="absolute w-full h-1 bg-blue-500 -top-1 z-10 animate-pulse"></div>
                     <div v-if="dropTarget === index && dropPosition === 'after'"

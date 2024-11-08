@@ -6,14 +6,15 @@ import {
     FOOTER_LOGO_CONFIG, 
     FOOTER_TEXT 
 } from '@/constants/doc-elements.constants'
-import { CompanyInfo, InvoiceItem, InvoiceInfo } from '@/types/invoice.types'
+import { InvoiceItem, InvoiceInfo } from '@/types/invoice.types'
+import { CompanyInfoItem } from '@/types/company.types'
 import { Student } from '@/types/student.types'
 
 const props = defineProps<{
     student: Student;
     subtotal: number;
     invoiceItems: InvoiceItem[];
-    companyInfo: CompanyInfo[];
+    companyInfo: CompanyInfoItem[];
     programTitle: string;
     invoiceInfo: InvoiceInfo[];
 }>()

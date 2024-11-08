@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { toast } from 'vue3-toastify';
 import { mdiArrowSplitVertical } from '@mdi/js';
 
 import Button from '@/components/shared/Button.vue';
@@ -9,15 +8,15 @@ import InvoicePanelLeft from '@/components/invoice/InvoicePanelLeft.vue';
 import InvoicePanelRight from '@/components/invoice/InvoicePanelRight.vue';
 import DocumentPreviewModal from '@/components/shared/DocumentPreviewModal.vue';
 
-import { COURSES } from '@/constants/courses.constants';
-import { COMPANY_INFO } from '@/constants/company.constants';
-import { INVOICE_INFO_FIELDS, PRESET_INVOICE_ITEMS } from '@/constants/invoice.constants';
+import { useInvoiceEditor } from '@/composables/use-invoice-editor';
+import { INVOICE_INFO_FIELDS } from '@/constants/invoice.constants';
 import { useStudentDetails } from '@/composables/use-student-details';
 import { useStudents } from '@/composables/use-students';
 import { generateInvoice } from '@/lib/pdf-generator/invoice';
-import { CompanyInfo, CreateInvoiceData, InvoiceItem } from '@/types/invoice.types';
+import { InvoiceItem } from '@/types/invoice.types';
 import { StoredInvoice } from '@/types/invoice.types';
-import { saveInvoice, getPreviousInvoices } from '@/services/api';
+import { Student } from '@/types/student.types';
+import { getPreviousInvoices } from '@/services/api';
 import { formatDate } from '@/utils/date-utils';
 
 type Mode = 'editor' | 'history';
@@ -27,23 +26,31 @@ const router = useRouter();
 const { getStudentById } = useStudents();
 const { student: studentDetails, pdfUrl, pdfTitle } = useStudentDetails();
 
-// State Management
-const isLoading = ref(false);
-const showPdfModal = ref(false);
+const {
+  isLoading,
+  showPdfModal,
+  invoiceItems,
+  companyInfo,
+  programTitle,
+  presetItems,
+  previousInvoices,
+  selectedInvoice,
+  companyInfoText,
+  subtotal,
+
+  setProgramTitle,
+
+  addPresetItem,
+  addNewItem,
+  removeItem,
+  updateAmount,
+  handleSave,
+  resetEditor
+} = useInvoiceEditor();
 
 // Student Data
 const student = ref(await getStudentById(parseInt(route.params.id as string, 10)));
 studentDetails.value = student.value;
-
-// Company Info
-const companyInfo = ref<CompanyInfo[]>(COMPANY_INFO);
-
-const companyInfoText = computed({
-  get: () => companyInfo.value.map(item => item.text).join('\n'),
-  set: (newValue: string) => {
-    companyInfo.value = newValue.split('\n').map(text => ({ text, bold: false }));
-  }
-});
 
 // Get course ID from URL query params
 const courseId = parseInt(route.query.course_id as string, 10);
@@ -51,43 +58,13 @@ const courseId = parseInt(route.query.course_id as string, 10);
 // Get mode from URL query params
 const mode = ref<Mode>(route.query.mode as Mode);
 
-// Program Info
-const programTitle = ref('');
-
-// Helper function to determine program title
-const setProgramTitle = () => {
-  const course = COURSES.find(c => c.id === courseId);
-  
-  if (course) {
-    programTitle.value = `${course.title}`;
-  } else {
-    // Fallback to existing logic if no courseId is found
-    programTitle.value = `${courseId}`;
-  }
-};
-
-// Invoice Items
-const invoiceItems = ref<InvoiceItem[]>([]);
-const presetItems = ref<InvoiceItem[]>(PRESET_INVOICE_ITEMS);
-
-// Invoice History
-const previousInvoices = ref<StoredInvoice[]>([]);
-const selectedInvoice = ref<StoredInvoice | null>(null);
-
-// Computed Values
-const subtotal = computed(() =>
-  invoiceItems.value.reduce((sum, item) => sum + item.amount, 0)
-);
-
-const datePaid = formatDate(student.value?.enrollment_date || '');
-
-const invoiceInfo = computed(() => 
+const invoiceInfo = computed(() =>
   INVOICE_INFO_FIELDS.map(field => ({
     label: field.label,
     value: field.getValue({
       invoice: selectedInvoice.value,
       student: student.value,
-      datePaid
+      datePaid: formatDate(student.value?.enrollment_date || ''),
     })
   }))
 );
@@ -127,14 +104,14 @@ const fetchPreviousInvoices = async () => {
     previousInvoices.value = fetchedInvoices.map(invoice => ({
       ...invoice,
       updated_at: invoice.created_at,
-      invoice_items: Array.isArray(invoice.invoice_items) 
-        ? invoice.invoice_items 
+      invoice_items: Array.isArray(invoice.invoice_items)
+        ? invoice.invoice_items
         : JSON.parse(invoice.invoice_items),
-      company_info: Array.isArray(invoice.company_info) 
-        ? invoice.company_info 
+      company_info: Array.isArray(invoice.company_info)
+        ? invoice.company_info
         : JSON.parse(invoice.company_info),
-      invoice_info: Array.isArray(invoice.invoice_info) 
-        ? invoice.invoice_info 
+      invoice_info: Array.isArray(invoice.invoice_info)
+        ? invoice.invoice_info
         : JSON.parse(invoice.invoice_info),
     }));
   } catch (error) {
@@ -159,13 +136,7 @@ const handleInvoiceSelect = async (invoice: StoredInvoice) => {
   }
 };
 
-const resetEditor = () => {
-  selectedInvoice.value = null;
-  invoiceItems.value = [];
-  updatePreview();
-};
-
-const handleTabSwitch = (tab: 'editor' | 'history') => {
+const handleTabSwitch = (tab: Mode) => {
   if (tab === 'editor') {
     resetEditor();
     activeTab.value = 'editor';
@@ -195,92 +166,8 @@ const handleTabSwitch = (tab: 'editor' | 'history') => {
   });
 };
 
-const addPresetItem = (item: InvoiceItem) => {
-  invoiceItems.value.push({ ...item });
-};
-
-const addNewItem = () => {
-    invoiceItems.value.push({
-        description: '',
-        qty: 1,
-        unitPrice: 0,
-        amount: 0
-    });
-};
-
-const removeItem = (index: number) => {
-  invoiceItems.value.splice(index, 1);
-};
-
-const updateAmount = (index: number) => {
-  const item = invoiceItems.value[index];
-  item.amount = item.qty * item.unitPrice;
-};
-
 const handlePreview = async () => {
   showPdfModal.value = true;
-};
-
-const handleSave = async () => {
-
-  // Validate student
-  if (!student.value?.ID) {
-    toast.error('Student ID is required');
-    return;
-  }
-
-  // Validate enrolment date
-  if (!student.value?.enrollment_date) {
-    toast.error('Enrolment date is required');
-    return;
-  }
-
-  // Validate invoice items
-  if (invoiceItems.value.length === 0) {
-    toast.error('Please add at least one invoice item');
-    return;
-  }
-
-  // Validate company info
-  if (companyInfo.value.length === 0 || companyInfo.value.every(item => !item.text.trim())) {
-    toast.error('Company information cannot be empty');
-    return;
-  }
-
-  // Validate program title
-  if (!programTitle.value.trim()) {
-    toast.error('Program title cannot be empty');
-    return;
-  }
-
-  // Validate invoice items details
-  const invalidItems = invoiceItems.value.some(item => 
-    !item.description.trim() || 
-    item.qty <= 0 || 
-    item.unitPrice <= 0
-  );
-
-  if (invalidItems) {
-    toast.error('All invoice items must have a description, quantity, and price greater than 0');
-    return;
-  }
-
-  try {
-    const invoiceData: CreateInvoiceData = {
-      student_id: student.value?.ID,
-      program_title: programTitle.value,
-      company_info: JSON.stringify(companyInfo.value),
-      invoice_info: JSON.stringify(invoiceInfo.value),
-      invoice_items: JSON.stringify(invoiceItems.value),
-      enrolment_date: student.value?.enrollment_date
-    };
-
-    await saveInvoice(invoiceData);
-    toast.success('Invoice saved successfully');
-    // router.push(`/students/${student.value?.ID}`);
-  } catch (error) {
-    console.error('Failed to save invoice:', error);
-  }
 };
 
 const startResize = (event: MouseEvent) => {
@@ -311,7 +198,7 @@ const startResize = (event: MouseEvent) => {
 watch([invoiceItems, student, programTitle, subtotal], updatePreview, { deep: true });
 
 onMounted(() => {
-  setProgramTitle();
+  setProgramTitle(courseId);
   updatePreview();
   fetchPreviousInvoices();
 });
@@ -319,32 +206,23 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col">
+  <div v-if="!student" class="flex flex-col">
+    Loading...
+  </div>
+  <div v-if="student" class="flex flex-col">
     <!-- Top Navigation -->
     <div class="mb-6 flex justify-between items-center">
-      <Button 
-        showIcon="return" 
-        iconPosition="left" 
-        @click="router.back()" 
-        buttonClass="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow flex items-center transition duration-300 ease-in-out"
-      >
+      <Button showIcon="return" iconPosition="left" @click="router.back()"
+        buttonClass="bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow flex items-center transition duration-300 ease-in-out">
         Return
       </Button>
       <div class="space-x-4 flex items-center">
-        <Button 
-          v-if="activeTab === 'editor'"
-          showIcon="magnify" 
-          @click="handlePreview" 
-          buttonClass="bg-blue-100 hover:bg-blue-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow flex items-center transition duration-300 ease-in-out"
-        >
+        <Button v-if="activeTab === 'editor'" showIcon="magnify" @click="handlePreview"
+          buttonClass="bg-blue-100 hover:bg-blue-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow flex items-center transition duration-300 ease-in-out">
           Preview PDF
         </Button>
-        <Button 
-          v-if="activeTab === 'editor'"
-          showIcon="save" 
-          @click="handleSave" 
-          buttonClass="bg-green-100 hover:bg-green-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow flex items-center transition duration-300 ease-in-out"
-        >
+        <Button v-if="activeTab === 'editor'" showIcon="save" @click="() => handleSave(student as Student)"
+          buttonClass="bg-green-100 hover:bg-green-200 text-gray-800 font-semibold py-2 px-4 border border-gray-400 rounded shadow flex items-center transition duration-300 ease-in-out">
           Save
         </Button>
       </div>
@@ -354,25 +232,12 @@ onMounted(() => {
     <div class="flex flex-row">
       <!-- Left Side - Tabs -->
       <div id="leftSide" class="bg-white rounded-lg shadow" style="width: 50%;">
-        <InvoicePanelLeft
-          v-model:company-info-text="companyInfoText"
-          v-model:program-title="programTitle"
-          v-model:invoice-items="invoiceItems"
-          :preset-items="presetItems"
-          :subtotal="subtotal"
-          :is-loading="isLoading"
-          :previous-invoices="previousInvoices"
-          :selected-invoice="selectedInvoice"
-          :active-tab="activeTab"
-          :handle-tab-switch="handleTabSwitch"
-          :add-preset-item="addPresetItem"
-          :remove-item="removeItem"
-          :update-amount="updateAmount"
-          :handle-invoice-select="handleInvoiceSelect"
-          :reset-editor="resetEditor"
-          @add-item="addNewItem"
-          @refresh-invoices="fetchPreviousInvoices"
-        />
+        <InvoicePanelLeft v-model:company-info-text="companyInfoText" v-model:program-title="programTitle"
+          v-model:invoice-items="invoiceItems" :preset-items="presetItems" :subtotal="subtotal" :is-loading="isLoading"
+          :previous-invoices="previousInvoices" :selected-invoice="selectedInvoice" :active-tab="activeTab"
+          :handle-tab-switch="handleTabSwitch" :add-preset-item="addPresetItem" :remove-item="removeItem"
+          :update-amount="updateAmount" :handle-invoice-select="handleInvoiceSelect" :reset-editor="resetEditor"
+          @add-item="addNewItem" @refresh-invoices="fetchPreviousInvoices" />
       </div>
 
       <!-- Resize Handler -->
@@ -384,27 +249,14 @@ onMounted(() => {
 
       <!-- Right Side - Preview -->
       <div id="rightSide" class="bg-white rounded-lg shadow" style="width: calc(50% - 10px);">
-        <InvoicePanelRight
-          :student="student"
-          :subtotal="subtotal"
-          :invoice-items="invoiceItems"
-          :company-info="companyInfo"
-          :invoice-info="invoiceInfo"
-          :program-title="programTitle"
-          :active-tab="activeTab"
-          :previous-invoices="previousInvoices"
-          :selected-invoice="selectedInvoice"
-        />
+        <InvoicePanelRight :student="student" :subtotal="subtotal" :invoice-items="invoiceItems"
+          :company-info="companyInfo" :invoice-info="invoiceInfo" :program-title="programTitle" :active-tab="activeTab"
+          :previous-invoices="previousInvoices" :selected-invoice="selectedInvoice" />
       </div>
     </div>
 
     <!-- PDF Preview Modal -->
-    <DocumentPreviewModal 
-      :is-open="showPdfModal" 
-      :pdf-url="pdfUrl" 
-      :title="'Invoice'" 
-      @close="showPdfModal = false"
-    />
+    <DocumentPreviewModal :is-open="showPdfModal" :pdf-url="pdfUrl" :title="'Invoice'" @close="showPdfModal = false" />
   </div>
 </template>
 

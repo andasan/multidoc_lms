@@ -6,7 +6,7 @@ import { useUser } from 'vue-clerk'
 
 import ClerkLogin from './ClerkLogin.vue'
 
-import { COMPANY_LOGO, COMPANY_NAME } from '@/constants/company.constants'
+import { COMPANY_LOGO, COMPANY_DETAILS } from '@/constants/company.constants'
 import { useCollapseStore } from '@/stores/collapseStore'
 
 interface NavLink {
@@ -54,7 +54,7 @@ const filteredNavLinks = computed<NavLink[]>(() => {
             'mr-3': !collapseStore.isCollapsed
           }"
         >
-        <span v-if="!collapseStore.isCollapsed">{{ COMPANY_NAME }}</span>
+        <span v-if="!collapseStore.isCollapsed">{{ COMPANY_DETAILS.name }}</span>
       </h2>
     </div>
 
