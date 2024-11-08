@@ -1,3 +1,7 @@
+import Logo from '@/assets/logo.png';
+
+export const COMPANY_LOGO = Logo;
+
 export const COMPANY_NAME = 'Multidoc LMS';
 export const COMPANY_ADDRESS_1 = '#xxx-xxx Cloverdale St';
 export const COMPANY_ADDRESS_2 = 'City, State, Zipcode';

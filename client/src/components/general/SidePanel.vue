@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, FunctionalComponent } from 'vue'
 import { useRouter } from 'vue-router'
-import { HomeIcon, AcademicCapIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon, UserPlusIcon } from '@heroicons/vue/24/outline'
+import { HomeIcon, ChevronDoubleLeftIcon, ChevronDoubleRightIcon, UserPlusIcon } from '@heroicons/vue/24/outline'
 import { useUser } from 'vue-clerk'
 
 import ClerkLogin from './ClerkLogin.vue'
 
-import { COMPANY_NAME } from '@/constants/company.constants'
+import { COMPANY_LOGO, COMPANY_NAME } from '@/constants/company.constants'
 import { useCollapseStore } from '@/stores/collapseStore'
 
 interface NavLink {
@@ -44,18 +44,32 @@ const filteredNavLinks = computed<NavLink[]>(() => {
     }"
     style="display: flex;"
   >
-    <div class="p-6 flex justify-between items-center">
+    <div class="p-6 border-b border-gray-700 flex justify-between items-center">
       <h2 class="text-2xl font-bold flex items-center">
-        <AcademicCapIcon class="w-5 h-5 mr-3" />
+        <img 
+          :src="COMPANY_LOGO" 
+          alt="Multidoc LMS Logo" 
+          class="w-8 h-8"
+          :class="{
+            'mr-3': !collapseStore.isCollapsed
+          }"
+        >
         <span v-if="!collapseStore.isCollapsed">{{ COMPANY_NAME }}</span>
       </h2>
     </div>
 
-    <nav class="mt-6 flex-grow">
+    <nav class="flex-grow">
       <router-link v-for="link in filteredNavLinks" :key="link.path" :to="link.path"
-        :class="['flex items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white', { 'opacity-50 pointer-events-none': link.disabled, 'bg-gray-800': router.currentRoute.value.path === link.path }]"
-        @click.prevent="link.disabled && $event.preventDefault()">
-        <component :is="link.icon" class="w-5 h-5 mr-3" />
+        :class="['flex justify-center items-center px-6 py-3 text-gray-300 hover:bg-gray-800 hover:text-white', { 'opacity-50 pointer-events-none': link.disabled, 'bg-gray-800': router.currentRoute.value.path === link.path }]"
+        @click.prevent="link.disabled && $event.preventDefault()"
+      >
+        <component 
+          :is="link.icon" 
+          class="w-5 h-5"
+          :class="{
+            'mr-3': !collapseStore.isCollapsed
+          }"
+        />
         <span v-if="!collapseStore.isCollapsed">{{ link.label }}</span>
       </router-link>
     </nav>
