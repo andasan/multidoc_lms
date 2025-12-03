@@ -14,13 +14,74 @@ async function tableExists(connection: Connection, tableName: string): Promise<b
 
 async function executeSQLFile(connection: Connection, filePath: string): Promise<void> {
   const sql = fs.readFileSync(filePath, 'utf8');
-  const statements = sql
-    .split(';')
-    .map(statement => statement.trim())
-    .filter(statement => statement.length > 0);
+  
+  // Split SQL statements properly, handling semicolons inside quoted strings
+  const statements: string[] = [];
+  let currentStatement = '';
+  let inSingleQuote = false;
+  let inDoubleQuote = false;
+  let escaped = false;
+  
+  for (let i = 0; i < sql.length; i++) {
+    const char = sql[i];
+    const prevChar = i > 0 ? sql[i - 1] : '';
+    
+    // Handle escape sequences
+    if (escaped) {
+      currentStatement += char;
+      escaped = false;
+      continue;
+    }
+    
+    if (char === '\\' && (inSingleQuote || inDoubleQuote)) {
+      escaped = true;
+      currentStatement += char;
+      continue;
+    }
+    
+    // Track quote states
+    if (char === "'" && !inDoubleQuote && !escaped) {
+      inSingleQuote = !inSingleQuote;
+    } else if (char === '"' && !inSingleQuote && !escaped) {
+      inDoubleQuote = !inDoubleQuote;
+    }
+    
+    // Only split on semicolon if we're not inside quotes
+    if (char === ';' && !inSingleQuote && !inDoubleQuote) {
+      const trimmed = currentStatement.trim();
+      if (trimmed.length > 0 && !trimmed.startsWith('--')) {
+        statements.push(trimmed);
+      }
+      currentStatement = '';
+    } else {
+      currentStatement += char;
+    }
+  }
+  
+  // Add any remaining statement
+  const trimmed = currentStatement.trim();
+  if (trimmed.length > 0 && !trimmed.startsWith('--')) {
+    statements.push(trimmed);
+  }
 
   for (const statement of statements) {
-    await connection.query(statement);
+    // Skip comments and empty statements
+    if (statement.trim().length === 0 || statement.trim().startsWith('--')) {
+      continue;
+    }
+    try {
+      await connection.query(statement);
+    } catch (error: any) {
+      // Ignore errors about duplicate keys/indexes (they might already exist)
+      if (error.code === 'ER_DUP_KEYNAME' || error.code === 'ER_DUP_ENTRY' || 
+          error.message?.includes('Duplicate key name') ||
+          error.message?.includes('already exists')) {
+        console.log(`   Warning: ${error.message.split('\n')[0]}`);
+        continue;
+      }
+      // Re-throw other errors
+      throw error;
+    }
   }
 }
 
